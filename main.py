@@ -1,23 +1,40 @@
 import telebot
 from telebot import types
+from itertools import *
+
+
+class collage(object):
+    def __init__(self, name, balls, subjects, description):
+        self.name = name
+        self.balls = balls
+        self.subjects = subjects
+        self.description = description
+
+    def can_be(self, our_subjects, our_balls):
+        for i in permutations(our_subjects, r=2):
+            if sorted(self.subjects) == sorted(i):
+                print(self.subjects)
+                return True
+            else: return False
+
+
+collages = []
+collages.append(collage('МИСИС', 270, ('math_p', 'inf'), 'norm VUZ'))
 
 bot = telebot.TeleBot('7019813202:AAG-TNA5l12ZC-244jw223iqQ2jT05shJPI');
-collages = {
-    'first colllage': (['math_p', 'phis'], 55),
-    'second collage': (['math_b', 'hist'], 55),
-    'third collage': (['math_p', 'phis', 'inf'], 70)
-}
+
 names_subjects = {
     'math_p': ('математика профильная', 'математика профиль'),
     'math_b': ('математика базовая', 'математика база'),
     'phis': ('физика'),
     'inf': ('информатика'),
     'hist': ('история')
-
 }
-subjects = {
-    'math_p': 'Математика профиль',
-    'math_b': 'Математика база',
+subjects_math = {
+    'math_p':'Математика профиль',
+    'math_b':'Математика база'
+}
+subjects_other = {
     'phis': 'Физика',
     'inf': 'Информатика',
     'hist': 'История',
@@ -30,29 +47,71 @@ subjects = {
 }
 user_data = []
 count = 0
-
-
+queue_out = 0
+id_user = ''
 @bot.message_handler(content_types=['text'])
 def f(message):
     global user_data
-    keyboard = types.InlineKeyboardMarkup();
-    key_yes = types.InlineKeyboardButton(text='Да', callback_data='yes');
-    keyboard.add(key_yes);
-    key_no = types.InlineKeyboardButton(text='Нет', callback_data='no');
-    keyboard.add(key_no);
-    if message.text:
-        for i in names_subjects:
-            if message.text in names_subjects[i]:
-                if i not in user_data: user_data.append(i)
-    # bot.send_message(message.from_user.id, text=f'ur id: {message.from_user.id}\nuser data: {user_data}')
-    # bot.send_message(message.from_user.id, text=f'Для этого спсиска найдено {count} вариантов. Посмотреть?', reply_markup=keyboard)
+    global queue_out
+    global id_user
+    id_user = message.from_user.id
+
+    keyboard_math = types.InlineKeyboardMarkup()
+    keyboard_other = types.InlineKeyboardMarkup()
+    keyboard_answer = types.InlineKeyboardMarkup()
+    key = types.InlineKeyboardButton(text='Да', callback_data='yes')
+    keyboard_answer.add(key)
+    key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
+    keyboard_answer.add(key)
+    for i in subjects_other:
+        key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
+        keyboard_other.add(key)
+    for i in subjects_math:
+        key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
+        keyboard_math.add(key)
+
+    print(collages[0].can_be(user_data, 0))
+
+    if queue_out == 0: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                              reply_markup=keyboard_math)
+    elif queue_out == 1: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                              reply_markup=keyboard_other)
+    elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
+                              reply_markup=keyboard_answer)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-    if call.data == "yes":
-        pass
-    elif call.data == "no":
-        pass
+    global queue_out
+    global user_data
+    global id_user
+    if call.data in subjects_math:
+        queue_out = 1
+        user_data.append(call.data)
+    elif call.data in subjects_other:
+        queue_out = 2
+        user_data.append(call.data)
+    elif call.data == 'no': queue_out = 1
+
+    keyboard_math = types.InlineKeyboardMarkup()
+    keyboard_other = types.InlineKeyboardMarkup()
+    keyboard_answer = types.InlineKeyboardMarkup()
+    key = types.InlineKeyboardButton(text='Да', callback_data='yes')
+    keyboard_answer.add(key)
+    key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
+    keyboard_answer.add(key)
+    for i in subjects_other:
+        if i not in user_data:
+            key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
+            keyboard_other.add(key)
+    for i in subjects_math:
+        key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
+        keyboard_math.add(key)
+    if queue_out == 0: bot.send_message(id_user, text=f'user data: {user_data}',
+                              reply_markup=keyboard_math)
+    elif queue_out == 1: bot.send_message(id_user, text=f'user data: {user_data}',
+                              reply_markup=keyboard_other)
+    elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
+                              reply_markup=keyboard_answer)
 
 bot.polling(none_stop=True, interval=0) # отработка декораторов
