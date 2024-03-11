@@ -62,34 +62,43 @@ def f(message):
     global balls_input
     id_user = message.from_user.id
 
-    keyboard_math = types.InlineKeyboardMarkup()
-    keyboard_other = types.InlineKeyboardMarkup()
-    keyboard_answer = types.InlineKeyboardMarkup()
-    keyboard_answerBalls = types.InlineKeyboardMarkup()
-    keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
-    keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
-    keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
-    key = types.InlineKeyboardButton(text='Да', callback_data='yes')
-    keyboard_answer.add(key)
-    key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
-    keyboard_answer.add(key)
+    if message.text == '1':
+        keyboard_math = types.InlineKeyboardMarkup()
+        keyboard_other = types.InlineKeyboardMarkup()
+        keyboard_answer = types.InlineKeyboardMarkup()
+        keyboard_answerBalls = types.InlineKeyboardMarkup()
+        keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
+        keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
+        keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
+        key = types.InlineKeyboardButton(text='Да', callback_data='yes')
+        keyboard_answer.add(key)
+        key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
+        keyboard_answer.add(key)
 
-    for i in subjects_other:
-        if i not in user_data:
-            key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
-            keyboard_other.add(key)
-    for i in subjects_math:
-        key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
-        keyboard_math.add(key)
+        flag = True
+        row = []
+        for i in subjects_other:
+            if len(row) == 2: flag = False
+            if i not in user_data and flag:
+                key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
+                row.append(key)
+            if flag == False:
+                keyboard_other.add(row[0], row[1])
+                row = []
+                flag = True
 
-    if queue_out == 0: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
-                              reply_markup=keyboard_math)
-    elif queue_out == 1: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
-                              reply_markup=keyboard_other)
-    elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
-                              reply_markup=keyboard_answer)
-    elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
-                         reply_markup=keyboard_answerBalls)
+        for i in subjects_math:
+            key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
+            keyboard_math.add(key)
+
+        if queue_out == 0: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                                  reply_markup=keyboard_math)
+        elif queue_out == 1: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                                  reply_markup=keyboard_other)
+        elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
+                                  reply_markup=keyboard_answer)
+        elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
+                             reply_markup=keyboard_answerBalls)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
@@ -129,17 +138,29 @@ def callback_worker(call):
     keyboard_answer = types.InlineKeyboardMarkup()
     keyboard_answerBalls = types.InlineKeyboardMarkup()
     keyboard_answerVUZ = types.InlineKeyboardMarkup()
-    keyboard_answerVUZ.add(types.InlineKeyboardButton(text='Добавить в избранное', callback_data='yesV'))
-    keyboard_answerVUZ.add(types.InlineKeyboardButton(text='Пропустить', callback_data='noV'))
+    keyboard_answerVUZ.add(types.InlineKeyboardButton(text='Добавить в избранное', callback_data='yesV'),
+                           types.InlineKeyboardButton(text='Пропустить', callback_data='noV'))
     keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
     keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
     keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
     keyboard_answer.add(types.InlineKeyboardButton(text='Да', callback_data='yes'))
     keyboard_answer.add(types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no'))
+
+    flag = True
+    row = []
+    c = 0
     for i in subjects_other:
-        if i not in user_data:
-            key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
-            keyboard_other.add(key)
+        c+=1
+        if len(row) == 2: flag = False
+        if i not in user_data and flag:
+            row.append(types.InlineKeyboardButton(text=subjects_other[i], callback_data=i))
+        if flag == False:
+            keyboard_other.add(row[0], row[1])
+            row = [types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)]
+            flag = True
+        if (len(subjects_other) - len(user_data))%2==0 and c==len(subjects_other) and len(row)==1:
+            keyboard_other.add(row[0])
+
     for i in subjects_math:
         key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
         keyboard_math.add(key)
@@ -171,8 +192,10 @@ def callback_worker(call):
                               reply_markup=keyboard_math)
     elif queue_out == 1: bot.send_message(id_user, text=f'user data: {user_data}',
                               reply_markup=keyboard_other)
-    elif queue_out == 2: bot.send_message(id_user, text=text2,
-                              reply_markup=keyboard_answer)
+    elif queue_out == 2:
+        bot.send_message(id_user, text=text2, reply_markup=keyboard_answer)
+        #bot.send_photo(id_user, photo='https://i.pinimg.com/originals/50/5d/f7/505df71a436b6ebae13060b5c68d3f2b.jpg',
+                       #reply_markup=keyboard_answer)
     elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
                          reply_markup=keyboard_answerBalls)
     elif queue_out == 4:
