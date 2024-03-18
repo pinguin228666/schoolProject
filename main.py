@@ -1,14 +1,21 @@
 import telebot
 from telebot import types
 from itertools import *
+import databaseConnect
 
 
 class collage(object):
-    def __init__(self, name, balls, subjects, description):
+    def __init__(self, name='0', balls=0, subjects='0', description='0',
+                 link='0', besplatno=0, platno=0, cost=0, otsrochka=0):
         self.name = name
         self.balls = balls
         self.subjects = subjects
         self.description = description
+        self.link = link
+        self.besplatno = besplatno
+        self.platno = platno
+        self.cost = cost
+        self.otsrochka = otsrochka
 
     def can_be(self, our_subjects, our_balls):
         for i in permutations(our_subjects, r=2):
@@ -30,12 +37,12 @@ names_subjects = {
     'hist': ('история')
 }
 subjects_math = {
-    'math_p':'Математика профиль',
-    'math_b':'Математика база'
+    'math_p':'❤Математика профиль❤',
+    'math_b':'♿Математика база♿'
 }
 subjects_other = {
-    'phis': 'Физика',
-    'inf': 'Информатика',
+    'phis': '💀Физика💀',
+    'inf': '🌐Информатика🌐',
     'hist': 'История',
     'soc': 'Обществознание',
     'bio': 'Биология',
@@ -54,51 +61,99 @@ id_user = ''
 listV = []
 balls_input = False
 
-@bot.message_handler(content_types=['text'])
-def f(message):
+
+@bot.message_handler(commands=['reset'])
+def f2(message):
     global user_data
     global queue_out
     global id_user
     global balls_input
     id_user = message.from_user.id
 
-    if message.text == '1':
-        keyboard_math = types.InlineKeyboardMarkup()
-        keyboard_other = types.InlineKeyboardMarkup()
-        keyboard_answer = types.InlineKeyboardMarkup()
-        keyboard_answerBalls = types.InlineKeyboardMarkup()
-        keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
-        keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
-        keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
-        key = types.InlineKeyboardButton(text='Да', callback_data='yes')
-        keyboard_answer.add(key)
-        key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
-        keyboard_answer.add(key)
+    user_data = []
+    queue_out = 0
+    balls_input = []
 
-        flag = True
-        row = []
-        for i in subjects_other:
-            if len(row) == 2: flag = False
-            if i not in user_data and flag:
-                key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
-                row.append(key)
-            if flag == False:
-                keyboard_other.add(row[0], row[1])
-                row = []
-                flag = True
+    keyboard_math = types.InlineKeyboardMarkup()
+    keyboard_other = types.InlineKeyboardMarkup()
+    keyboard_answer = types.InlineKeyboardMarkup()
+    keyboard_answerBalls = types.InlineKeyboardMarkup()
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
+    key = types.InlineKeyboardButton(text='Да', callback_data='yes')
+    keyboard_answer.add(key)
+    key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
+    keyboard_answer.add(key)
 
-        for i in subjects_math:
-            key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
-            keyboard_math.add(key)
+    flag = True
+    row = []
+    for i in subjects_other:
+        if len(row) == 2: flag = False
+        if i not in user_data and flag:
+            key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
+            row.append(key)
+        if flag == False:
+            keyboard_other.add(row[0], row[1])
+            row = []
+            flag = True
 
-        if queue_out == 0: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
-                                  reply_markup=keyboard_math)
-        elif queue_out == 1: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
-                                  reply_markup=keyboard_other)
-        elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
-                                  reply_markup=keyboard_answer)
-        elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
-                             reply_markup=keyboard_answerBalls)
+    for i in subjects_math:
+        key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
+        keyboard_math.add(key)
+
+    if queue_out == 0: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                              reply_markup=keyboard_math)
+    elif queue_out == 1: bot.send_message(id_user, text=f'ur id: {message.from_user.id}\nuser data: {user_data}',
+                              reply_markup=keyboard_other)
+    elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
+                              reply_markup=keyboard_answer)
+    elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
+                         reply_markup=keyboard_answerBalls)
+
+@bot.message_handler(commands=['start'])
+def f1(message):
+    global user_data
+    global queue_out
+    global id_user
+    global balls_input
+    id_user = message.from_user.id
+
+    keyboard_math = types.InlineKeyboardMarkup()
+    keyboard_other = types.InlineKeyboardMarkup()
+    keyboard_answer = types.InlineKeyboardMarkup()
+    keyboard_answerBalls = types.InlineKeyboardMarkup()
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='55+', callback_data='55'))
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='70+', callback_data='70'))
+    keyboard_answerBalls.add(types.InlineKeyboardButton(text='85+', callback_data='85'))
+    key = types.InlineKeyboardButton(text='Да', callback_data='yes')
+    keyboard_answer.add(key)
+    key = types.InlineKeyboardButton(text='Посмотрю еще предметы', callback_data='no')
+    keyboard_answer.add(key)
+
+    flag = True
+    row = []
+    for i in subjects_other:
+        if len(row) == 2: flag = False
+        if i not in user_data and flag:
+            key = types.InlineKeyboardButton(text=subjects_other[i], callback_data=i)
+            row.append(key)
+        if flag == False:
+            keyboard_other.add(row[0], row[1])
+            row = []
+            flag = True
+
+    for i in subjects_math:
+        key = types.InlineKeyboardButton(text=subjects_math[i], callback_data=i)
+        keyboard_math.add(key)
+
+    if queue_out == 0: bot.send_photo(id_user, photo='https://i.imgur.com/9TQFoHQ.png', reply_markup=keyboard_math)
+    #https://i.imgur.com/7VoNa5R.png
+    elif queue_out == 1: bot.send_photo(id_user, photo='https://i.imgur.com/7VoNa5R.png', reply_markup=keyboard_other)
+    elif queue_out == 2: bot.send_message(id_user, text=f'Это все? У нас тут {count} результатов. Взглянешь?',
+                              reply_markup=keyboard_answer)
+    elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
+                         reply_markup=keyboard_answerBalls)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
@@ -130,8 +185,17 @@ def callback_worker(call):
     elif call.data == '85':
         user_data_balls = 85*3
         queue_out = 2
-    elif call.data in ('yesV', 'noV'): queue_out = 4
-
+    elif call.data in ('yesV', 'noV') and listV:
+        queue_out = 4
+    if call.data == 'yesV':
+        databaseConnect.writeDB(f"""INSERT INTO users (user_id, nameV, discriptionV, linkV, besplatno,
+                                platno, cost, otsrochka, balls_user, subjects)
+                                VALUES({id_user}, '{listV[0].name}', '{listV[0].description}', 
+                                '{listV[0].link}', {listV[0].besplatno}, {listV[0].platno}, {listV[0].cost}, 
+                                {listV[0].otsrochka}, {listV[0].balls}, '{listV[0].subjects[0]}')""")
+        listV.pop(0)
+    if call.data == 'noV':
+        listV.pop(0)
 
     keyboard_math = types.InlineKeyboardMarkup()
     keyboard_other = types.InlineKeyboardMarkup()
@@ -190,12 +254,9 @@ def callback_worker(call):
 
     if queue_out == 0: bot.send_message(id_user, text=f'user data: {user_data}',
                               reply_markup=keyboard_math)
-    elif queue_out == 1: bot.send_message(id_user, text=f'user data: {user_data}',
-                              reply_markup=keyboard_other)
-    elif queue_out == 2:
-        bot.send_message(id_user, text=text2, reply_markup=keyboard_answer)
-        #bot.send_photo(id_user, photo='https://i.pinimg.com/originals/50/5d/f7/505df71a436b6ebae13060b5c68d3f2b.jpg',
-                       #reply_markup=keyboard_answer)
+    elif queue_out == 1: bot.send_photo(id_user, photo='https://i.imgur.com/7VoNa5R.png', reply_markup=keyboard_other)
+
+    elif queue_out == 2: bot.send_message(id_user, text=text2, reply_markup=keyboard_answer)
     elif queue_out == 3: bot.send_message(id_user, text='На сколько баллов метишь? Можешь написать сам:',
                          reply_markup=keyboard_answerBalls)
     elif queue_out == 4:
